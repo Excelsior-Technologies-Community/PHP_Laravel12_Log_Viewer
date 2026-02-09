@@ -1,5 +1,11 @@
 # PHP_Laravel12_Log_Viewer
 
+<p align="center">
+<a href="#"><img src="https://img.shields.io/badge/Laravel-12-red" alt="Laravel 12"></a>
+<a href="#"><img src="https://img.shields.io/badge/PHP-8.2+-blue" alt="PHP 8.2+"></a>
+<a href="#"><img src="https://img.shields.io/badge/LogViewer-Installed-green" alt="Log Viewer"></a>
+</p>
+
 ---
 
 ##  Overview
@@ -22,7 +28,6 @@ The project runs using Laravel’s built-in development server (`php artisan ser
 
 ---
 
----
 #  Project Folder Structure 
 
 ```
