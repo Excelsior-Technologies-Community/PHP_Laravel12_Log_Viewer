@@ -1,59 +1,404 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# PHP_Laravel12_Log_Viewer
 
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+<a href="#"><img src="https://img.shields.io/badge/Laravel-12-red" alt="Laravel 12"></a>
+<a href="#"><img src="https://img.shields.io/badge/PHP-8.2+-blue" alt="PHP 8.2+"></a>
+<a href="#"><img src="https://img.shields.io/badge/LogViewer-Installed-green" alt="Log Viewer"></a>
 </p>
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+##  Overview
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+PHP_Laravel12_Log_Viewer is a Laravel 12 based project that demonstrates how to implement and manage application logging using Laravel’s built-in logging system. This project includes both the official Log Viewer package and a custom-built log viewer interface to help understand how logs are stored, accessed, and displayed within a Laravel application.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+The project runs using Laravel’s built-in development server (`php artisan serve`) and does not require XAMPP or additional server configuration.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+##  Features
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+* Laravel 12 fresh project setup
+* Built-in logging configuration
+* Integration of official Log Viewer package
+* Log generation using Laravel Tinker
+* Custom log viewer using Controller, Route, and Blade
+* Color-coded log display (INFO, WARNING, ERROR)
+* Organized project structure following MVC pattern
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+#  Project Folder Structure 
 
-### Premium Partners
+```
+laravel-log-viewer
+│
+├── app/
+│   └── Http/
+│       └── Controllers/
+│           └── Admin/
+│               └── CustomLogController.php
+│
+├── routes/
+│   └── web.php
+│
+├── resources/
+│   └── views/
+│       └── admin/
+│           └── logs/
+│               └── index.blade.php
+│
+├── storage/
+│   └── logs/
+│       └── laravel.log
+│
+└── vendor/
+    └── opcodesio/
+        └── log-viewer/
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
 
-## Contributing
+##  Introduction
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+This project demonstrates how to:
 
-## Code of Conduct
+* Install Laravel 12
+* Configure logging
+* Install and use the official Log Viewer package
+* Generate logs using Tinker
+* Create a custom log viewer using Controller, Route, and Blade
+* Understand the full Laravel project structure
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+The application runs using:
 
-## Security Vulnerabilities
+```bash
+php artisan serve
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+No XAMPP or Apache configuration is required.
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+#  Step 1 – Create Laravel 12 Project
+
+Open terminal and run:
+
+```bash
+composer create-project laravel/laravel laravel-log-viewer
+```
+
+Move into the project folder:
+
+```bash
+cd laravel-log-viewer
+```
+
+---
+
+#  Step 2 – Configure Environment
+
+Open the `.env` file and ensure the following configuration:
+
+```env
+APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=
+APP_DEBUG=true
+APP_URL=http://127.0.0.1:8000
+
+LOG_CHANNEL=stack
+LOG_STACK=single
+LOG_DEPRECATIONS_CHANNEL=null
+LOG_LEVEL=debug
+LOG_VIEWER_ENABLED=true
+```
+
+Generate application key:
+
+```bash
+php artisan key:generate
+```
+
+---
+
+#  Step 3 – Run Laravel Project
+
+Start the development server:
+
+```bash
+php artisan serve
+```
+
+Open in browser:
+
+```
+http://127.0.0.1:8000
+```
+
+Laravel homepage should load successfully.
+
+---
+
+#  Step 4 – Install Official Log Viewer Package
+
+Install the package:
+
+```bash
+composer require opcodesio/log-viewer
+```
+
+Publish assets:
+
+```bash
+php artisan vendor:publish --tag=log-viewer-assets --force
+```
+
+Clear cache:
+
+```bash
+php artisan optimize:clear
+```
+
+Restart server:
+
+```bash
+php artisan serve
+```
+
+---
+
+#  Step 5 – Access Log Viewer
+
+Open in browser:
+
+```
+http://127.0.0.1:8000/log-viewer
+```
+
+The Log Viewer dashboard will appear.
+
+---
+
+#  Step 6 – Generate Logs Using Tinker
+
+Open another terminal and run:
+
+```bash
+php artisan tinker
+```
+
+Paste the following:
+
+```php
+Log::info('User registered', ['user_id' => 1]);
+Log::info('Profile updated', ['user_id' => 1]);
+
+Log::warning('Low stock warning', ['product_id' => 10]);
+Log::warning('Multiple failed login attempts');
+
+Log::error('Payment failed', ['order_id' => 101]);
+Log::error('File upload failed');
+
+Log::debug('Cart updated');
+Log::debug('Coupon applied');
+
+Log::critical('Database connection lost');
+Log::alert('Admin password changed');
+
+Log::notice('Email verified');
+Log::emergency('System is down!');
+
+Log::info('Background job processed');
+Log::warning('API response delayed');
+Log::error('Invalid API token');
+```
+
+Exit Tinker:
+
+```php
+exit
+```
+
+Refresh:
+
+```
+http://127.0.0.1:8000/log-viewer
+```
+
+All logs will be visible.
+
+<img width="1917" height="897" alt="Screenshot 2026-02-09 134537" src="https://github.com/user-attachments/assets/ee73973a-a7ab-47c7-ac94-50ed163fa180" />
+
+
+---
+
+#  Log File Location
+
+Logs are stored inside:
+
+```
+storage/logs/laravel.log
+```
+
+If daily logging is enabled:
+
+```
+storage/logs/laravel-YYYY-MM-DD.log
+```
+
+---
+
+#  Custom Log Viewer Implementation
+
+In addition to the official package, we can create a custom log viewer.
+
+---
+
+## Step 1 – Create Controller
+
+Run:
+
+```bash
+php artisan make:controller Admin/CustomLogController
+```
+
+File location:
+
+```
+app/Http/Controllers/Admin/CustomLogController.php
+```
+
+Replace file content with:
+
+```php
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use Illuminate\Support\Facades\File;
+
+class CustomLogController
+{
+    public function index()
+    {
+        $path = storage_path('logs/laravel.log');
+
+        if (!File::exists($path)) {
+            abort(404, 'Log file not found.');
+        }
+
+        $logs = collect(explode("\n", File::get($path)))
+                    ->filter()
+                    ->reverse()
+                    ->take(300);
+
+        return view('admin.logs.index', compact('logs'));
+    }
+}
+```
+
+---
+
+## Step 2 – Add Route
+
+Open:
+
+```
+routes/web.php
+```
+
+Add:
+
+```php
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\CustomLogController;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/admin/logs', [CustomLogController::class, 'index']);
+```
+
+---
+
+## Step 3 – Create Blade View
+
+Create folder:
+
+```
+resources/views/admin/logs
+```
+
+Create file:
+
+```
+index.blade.php
+```
+
+Add the following code:
+
+```blade
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Custom Log Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-r from-purple-600 via-pink-500 to-blue-500 min-h-screen p-10">
+
+<div class="bg-white/10 backdrop-blur-xl shadow-2xl rounded-2xl p-6">
+
+    <h1 class="text-3xl font-bold text-white mb-6">
+        Log Viewer
+    </h1>
+
+    <div class="bg-black rounded-xl p-4 max-h-[600px] overflow-y-auto text-sm font-mono">
+
+        @foreach($logs as $log)
+
+            @php
+                $color = 'text-gray-300';
+
+                if(str_contains($log, 'ERROR')) {
+                    $color = 'text-red-400';
+                } elseif(str_contains($log, 'WARNING')) {
+                    $color = 'text-yellow-400';
+                } elseif(str_contains($log, 'INFO')) {
+                    $color = 'text-blue-400';
+                }
+            @endphp
+
+            <div class="mb-2 border-b border-gray-800 pb-1 {{ $color }}">
+                {{ $log }}
+            </div>
+
+        @endforeach
+
+    </div>
+
+</div>
+
+</body>
+</html>
+```
+
+---
+
+## Step 4 – Access Custom Viewer
+
+Open in browser:
+
+```
+http://127.0.0.1:8000/admin/logs
+```
+
+Logs will be displayed with color highlighting.
+
+<img width="1849" height="726" alt="Screenshot 2026-02-09 134553" src="https://github.com/user-attachments/assets/e6c9b48d-5577-4e27-a438-0b221e1ad952" />
+
+---
+
+
