@@ -17,24 +17,39 @@ class CustomLogController
         $path = storage_path('logs/laravel.log');
 
         if (!File::exists($path)) {
-            abort(404, 'Log file not found.');
+            File::put($path, '');
         }
 
-        // Read the log file
-        $logs = collect(explode("\n", File::get($path)))
-            ->map(fn ($log) => trim($log))
-            ->filter()
-            ->reverse()
-            ->take(300)
-            ->values();
-
-        // Search keyword
         $search = trim($request->input('search', ''));
 
-        // Selected log level
-        $level = strtoupper(trim($request->input('level', 'ALL')));
+        $level = strtoupper(
+            trim($request->input('level', 'ALL'))
+        );
 
-        // Filter by search text
+        $date = trim(
+            $request->input('date', '')
+        );
+
+        $perPage = (int) $request->input('per_page', 50);
+
+        if (!in_array($perPage, [25, 50, 100, 200], true)) {
+            $perPage = 50;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Read Log File
+        |--------------------------------------------------------------------------
+        */
+
+        $logs = $this->readLogs($path);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Search Filter
+        |--------------------------------------------------------------------------
+        */
+
         if ($search !== '') {
             $logs = $logs->filter(function ($log) use ($search) {
                 return str_contains(
@@ -44,35 +59,125 @@ class CustomLogController
             });
         }
 
-        // Filter by log level
+        /*
+        |--------------------------------------------------------------------------
+        | Level Filter
+        |--------------------------------------------------------------------------
+        */
+
         if ($level !== '' && $level !== 'ALL') {
             $logs = $logs->filter(function ($log) use ($level) {
-                return str_contains($log, ".{$level}:")
-                    || str_contains($log, ".{$level} ");
+                return $this->hasLogLevel($log, $level);
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Date Filter
+        |--------------------------------------------------------------------------
+        */
+
+        if ($date !== '') {
+            $logs = $logs->filter(function ($log) use ($date) {
+                return $this->logMatchesDate($log, $date);
             });
         }
 
         $logs = $logs->values();
 
-        // Calculate statistics from the filtered logs
+        /*
+        |--------------------------------------------------------------------------
+        | Statistics
+        |--------------------------------------------------------------------------
+        */
+
         $statistics = [
             'total' => $logs->count(),
-            'info' => $this->countLogLevel($logs, 'INFO'),
-            'warning' => $this->countLogLevel($logs, 'WARNING'),
-            'error' => $this->countLogLevel($logs, 'ERROR'),
-            'debug' => $this->countLogLevel($logs, 'DEBUG'),
-            'critical' => $this->countLogLevel($logs, 'CRITICAL'),
-            'alert' => $this->countLogLevel($logs, 'ALERT'),
-            'notice' => $this->countLogLevel($logs, 'NOTICE'),
-            'emergency' => $this->countLogLevel($logs, 'EMERGENCY'),
+
+            'info' => $this->countLogLevel(
+                $logs,
+                'INFO'
+            ),
+
+            'warning' => $this->countLogLevel(
+                $logs,
+                'WARNING'
+            ),
+
+            'error' => $this->countLogLevel(
+                $logs,
+                'ERROR'
+            ),
+
+            'debug' => $this->countLogLevel(
+                $logs,
+                'DEBUG'
+            ),
+
+            'critical' => $this->countLogLevel(
+                $logs,
+                'CRITICAL'
+            ),
+
+            'alert' => $this->countLogLevel(
+                $logs,
+                'ALERT'
+            ),
+
+            'notice' => $this->countLogLevel(
+                $logs,
+                'NOTICE'
+            ),
+
+            'emergency' => $this->countLogLevel(
+                $logs,
+                'EMERGENCY'
+            ),
         ];
 
-        return view('admin.logs.index', compact(
-            'logs',
-            'statistics',
-            'search',
-            'level'
-        ));
+        /*
+        |--------------------------------------------------------------------------
+        | Pagination
+        |--------------------------------------------------------------------------
+        */
+
+        $currentPage = max(
+            1,
+            (int) $request->input('page', 1)
+        );
+
+        $totalLogs = $logs->count();
+
+        $totalPages = max(
+            1,
+            (int) ceil($totalLogs / $perPage)
+        );
+
+        if ($currentPage > $totalPages) {
+            $currentPage = $totalPages;
+        }
+
+        $paginatedLogs = $logs
+            ->slice(
+                ($currentPage - 1) * $perPage,
+                $perPage
+            )
+            ->values();
+
+        return view(
+            'admin.logs.index',
+            compact(
+                'paginatedLogs',
+                'statistics',
+                'search',
+                'level',
+                'date',
+                'perPage',
+                'currentPage',
+                'totalPages',
+                'totalLogs'
+            )
+        );
     }
 
     /**
@@ -89,21 +194,26 @@ class CustomLogController
             ], 404);
         }
 
-        // Read the latest logs
-        $logs = collect(explode("\n", File::get($path)))
-            ->map(fn ($log) => trim($log))
-            ->filter()
-            ->reverse()
-            ->take(300)
-            ->values();
+        $logs = $this->readLogs($path);
 
-        // Search keyword
-        $search = trim($request->input('search', ''));
+        $search = trim(
+            $request->input('search', '')
+        );
 
-        // Selected log level
-        $level = strtoupper(trim($request->input('level', 'ALL')));
+        $level = strtoupper(
+            trim($request->input('level', 'ALL'))
+        );
 
-        // Apply search filter
+        $date = trim(
+            $request->input('date', '')
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Search
+        |--------------------------------------------------------------------------
+        */
+
         if ($search !== '') {
             $logs = $logs->filter(function ($log) use ($search) {
                 return str_contains(
@@ -113,34 +223,96 @@ class CustomLogController
             });
         }
 
-        // Apply level filter
+        /*
+        |--------------------------------------------------------------------------
+        | Level
+        |--------------------------------------------------------------------------
+        */
+
         if ($level !== '' && $level !== 'ALL') {
             $logs = $logs->filter(function ($log) use ($level) {
-                return str_contains($log, ".{$level}:")
-                    || str_contains($log, ".{$level} ");
+                return $this->hasLogLevel($log, $level);
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Date
+        |--------------------------------------------------------------------------
+        */
+
+        if ($date !== '') {
+            $logs = $logs->filter(function ($log) use ($date) {
+                return $this->logMatchesDate($log, $date);
             });
         }
 
         $logs = $logs->values();
 
-        // Calculate live statistics
+        /*
+        |--------------------------------------------------------------------------
+        | Live Statistics
+        |--------------------------------------------------------------------------
+        */
+
         $statistics = [
             'total' => $logs->count(),
-            'info' => $this->countLogLevel($logs, 'INFO'),
-            'warning' => $this->countLogLevel($logs, 'WARNING'),
-            'error' => $this->countLogLevel($logs, 'ERROR'),
-            'debug' => $this->countLogLevel($logs, 'DEBUG'),
-            'critical' => $this->countLogLevel($logs, 'CRITICAL'),
-            'alert' => $this->countLogLevel($logs, 'ALERT'),
-            'notice' => $this->countLogLevel($logs, 'NOTICE'),
-            'emergency' => $this->countLogLevel($logs, 'EMERGENCY'),
+
+            'info' => $this->countLogLevel(
+                $logs,
+                'INFO'
+            ),
+
+            'warning' => $this->countLogLevel(
+                $logs,
+                'WARNING'
+            ),
+
+            'error' => $this->countLogLevel(
+                $logs,
+                'ERROR'
+            ),
+
+            'debug' => $this->countLogLevel(
+                $logs,
+                'DEBUG'
+            ),
+
+            'critical' => $this->countLogLevel(
+                $logs,
+                'CRITICAL'
+            ),
+
+            'alert' => $this->countLogLevel(
+                $logs,
+                'ALERT'
+            ),
+
+            'notice' => $this->countLogLevel(
+                $logs,
+                'NOTICE'
+            ),
+
+            'emergency' => $this->countLogLevel(
+                $logs,
+                'EMERGENCY'
+            ),
         ];
 
         return response()->json([
             'success' => true,
-            'logs' => $logs->all(),
+
+            'logs' => $logs
+                ->take(300)
+                ->values()
+                ->all(),
+
             'statistics' => $statistics,
-            'updated_at' => now()->format('d M Y, h:i:s A'),
+
+            'updated_at' => now()->format(
+                'd M Y, h:i:s A'
+            ),
+
             'total' => $logs->count(),
         ]);
     }
@@ -156,21 +328,121 @@ class CustomLogController
             abort(404, 'Log file not found.');
         }
 
-        // Read the log file
-        $logs = collect(explode("\n", File::get($path)))
-            ->map(fn ($log) => trim($log))
+        $logs = $this->getFilteredLogs(
+            $request,
+            $path
+        );
+
+        return response()->streamDownload(
+            function () use ($logs) {
+
+                $handle = fopen(
+                    'php://output',
+                    'w'
+                );
+
+                fputcsv(
+                    $handle,
+                    ['Log Entry']
+                );
+
+                foreach ($logs as $log) {
+                    fputcsv(
+                        $handle,
+                        [$log]
+                    );
+                }
+
+                fclose($handle);
+            },
+            'laravel-logs.csv',
+            [
+                'Content-Type' => 'text/csv',
+            ]
+        );
+    }
+
+    /**
+     * Clear Laravel log file.
+     */
+    public function clear(Request $request)
+    {
+        $path = storage_path('logs/laravel.log');
+
+        if (!File::exists($path)) {
+            File::put($path, '');
+        } else {
+            File::put($path, '');
+        }
+
+        return redirect()
+            ->route('admin.logs')
+            ->with(
+                'success',
+                'Laravel log file cleared successfully.'
+            );
+    }
+
+    /**
+     * Download complete raw log file.
+     */
+    public function download(): StreamedResponse
+    {
+        $path = storage_path('logs/laravel.log');
+
+        if (!File::exists($path)) {
+            abort(404, 'Log file not found.');
+        }
+
+        return response()->download(
+            $path,
+            'laravel.log',
+            [
+                'Content-Type' => 'text/plain',
+            ]
+        );
+    }
+
+    /**
+     * Read log file.
+     */
+    private function readLogs(string $path)
+    {
+        return collect(
+            explode(
+                "\n",
+                File::get($path)
+            )
+        )
+            ->map(
+                fn($log) => trim($log)
+            )
             ->filter()
             ->reverse()
-            ->take(300)
             ->values();
+    }
 
-        // Search keyword
-        $search = trim($request->input('search', ''));
+    /**
+     * Get filtered logs.
+     */
+    private function getFilteredLogs(
+        Request $request,
+        string $path
+    ) {
+        $logs = $this->readLogs($path);
 
-        // Selected log level
-        $level = strtoupper(trim($request->input('level', 'ALL')));
+        $search = trim(
+            $request->input('search', '')
+        );
 
-        // Apply search filter
+        $level = strtoupper(
+            trim($request->input('level', 'ALL'))
+        );
+
+        $date = trim(
+            $request->input('date', '')
+        );
+
         if ($search !== '') {
             $logs = $logs->filter(function ($log) use ($search) {
                 return str_contains(
@@ -180,45 +452,67 @@ class CustomLogController
             });
         }
 
-        // Apply level filter
         if ($level !== '' && $level !== 'ALL') {
             $logs = $logs->filter(function ($log) use ($level) {
-                return str_contains($log, ".{$level}:")
-                    || str_contains($log, ".{$level} ");
+                return $this->hasLogLevel($log, $level);
             });
         }
 
-        $logs = $logs->values();
+        if ($date !== '') {
+            $logs = $logs->filter(function ($log) use ($date) {
+                return $this->logMatchesDate($log, $date);
+            });
+        }
 
-        return response()->streamDownload(function () use ($logs) {
-            $handle = fopen('php://output', 'w');
+        return $logs->values();
+    }
 
-            // CSV header
-            fputcsv($handle, [
-                'Log Entry',
-            ]);
+    /**
+     * Check log level.
+     */
+    private function hasLogLevel(
+        string $log,
+        string $level
+    ): bool {
+        return str_contains(
+            $log,
+            ".{$level}:"
+        ) || str_contains(
+            $log,
+            ".{$level} "
+        );
+    }
 
-            // CSV data
-            foreach ($logs as $log) {
-                fputcsv($handle, [
-                    $log,
-                ]);
-            }
-
-            fclose($handle);
-        }, 'laravel-logs.csv', [
-            'Content-Type' => 'text/csv',
-        ]);
+    /**
+     * Check log date.
+     *
+     * Laravel log example:
+     * [2026-09-21 11:20:30] local.INFO: Message
+     */
+    private function logMatchesDate(
+        string $log,
+        string $date
+    ): bool {
+        return str_contains(
+            $log,
+            "[{$date}"
+        );
     }
 
     /**
      * Count logs by level.
      */
-    private function countLogLevel($logs, string $level): int
-    {
-        return $logs->filter(function ($log) use ($level) {
-            return str_contains($log, ".{$level}:")
-                || str_contains($log, ".{$level} ");
-        })->count();
+    private function countLogLevel(
+        $logs,
+        string $level
+    ): int {
+        return $logs
+            ->filter(function ($log) use ($level) {
+                return $this->hasLogLevel(
+                    $log,
+                    $level
+                );
+            })
+            ->count();
     }
 }
