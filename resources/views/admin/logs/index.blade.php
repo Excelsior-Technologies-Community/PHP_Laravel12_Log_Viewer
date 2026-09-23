@@ -403,6 +403,67 @@
 
 
         {{-- =========================================================
+             LOG TELEMETRY ANALYTICS & 24-HOUR HEALTH HEATMAP
+        ========================================================== --}}
+        @if(isset($telemetry))
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        📊 Log Telemetry Analytics & 24-Hour Health Heatmap
+                    </h2>
+                    <p class="text-sm text-gray-500 mt-1">Hourly system health distribution and error severity metrics</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-sm font-semibold text-gray-600">Health Status:</span>
+                    @if($telemetry['healthStatus'] === 'CRITICAL')
+                        <span class="px-4 py-1.5 bg-red-100 text-red-700 font-bold text-xs rounded-full border border-red-300 animate-pulse">🔴 CRITICAL SEVERITY</span>
+                    @elseif($telemetry['healthStatus'] === 'ATTENTION NEEDED')
+                        <span class="px-4 py-1.5 bg-yellow-100 text-yellow-800 font-bold text-xs rounded-full border border-yellow-300">⚠️ ATTENTION NEEDED</span>
+                    @else
+                        <span class="px-4 py-1.5 bg-green-100 text-green-700 font-bold text-xs rounded-full border border-green-300">✅ SYSTEM HEALTHY</span>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Severity Progress Bar -->
+            <div class="mb-6">
+                <div class="flex justify-between text-sm font-medium text-gray-700 mb-2">
+                    <span>Error Severity Ratio: <strong>{{ $telemetry['errorRatio'] }}%</strong></span>
+                    <span>Total Exceptions/Errors: <strong>{{ $telemetry['totalErrors'] }}</strong></span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden flex">
+                    <div class="bg-red-500 h-3 transition-all duration-500" style="width: {{ min(100, $telemetry['errorRatio']) }}%"></div>
+                    <div class="bg-green-500 h-3 flex-1"></div>
+                </div>
+            </div>
+
+            <!-- 24-Hour Heatmap Grid -->
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">24-Hour Hourly Log Activity Distribution (00:00 - 23:00)</p>
+                <div class="grid grid-cols-6 sm:grid-cols-12 md:grid-cols-24 gap-1.5 text-center">
+                    @foreach($telemetry['hourlyHeatmap'] as $hour => $count)
+                        @php
+                            $intensityClass = 'bg-gray-100 text-gray-500';
+                            if ($count > 20) {
+                                $intensityClass = 'bg-red-600 text-white font-bold shadow-md';
+                            } elseif ($count > 10) {
+                                $intensityClass = 'bg-orange-500 text-white font-bold';
+                            } elseif ($count > 5) {
+                                $intensityClass = 'bg-yellow-400 text-gray-900 font-semibold';
+                            } elseif ($count > 0) {
+                                $intensityClass = 'bg-blue-100 text-blue-800 font-semibold';
+                            }
+                        @endphp
+                        <div class="p-2 rounded-lg {{ $intensityClass }} text-xs flex flex-col justify-between h-14 border border-gray-200/50" title="Hour {{ $hour }}:00 - {{ $count }} logs">
+                            <span class="text-[10px] opacity-75">{{ $hour }}h</span>
+                            <span class="text-sm font-bold mt-1">{{ $count }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        @endif
              SEARCH AND FILTER
         ========================================================== --}}
 
@@ -579,6 +640,66 @@
 
 
         {{-- =========================================================
+             INTERACTIVE TEST LOG GENERATOR STUDIO & EXCEPTION TESTER
+        ========================================================== --}}
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+                🧪 Interactive Test Log Generator Studio & Exception Tester
+            </h2>
+            <p class="text-sm text-gray-500 mb-5">Instantly generate test logs & mock exception stack traces to test monitoring filters and audio alarms.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Log Level Generator Form -->
+                <form method="POST" action="{{ route('admin.logs.generate') }}" class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    @csrf
+                    <h3 class="font-bold text-gray-700 text-sm mb-3">⚡ Quick Log Entry Generator</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Log Level</label>
+                            <select name="type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                                <option value="info">INFO - Informational Message</option>
+                                <option value="warning">WARNING - System Warning</option>
+                                <option value="error">ERROR - Application Error</option>
+                                <option value="critical">CRITICAL - Severe Failure</option>
+                                <option value="debug">DEBUG - Debug Trace</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Custom Message (Optional)</label>
+                            <input type="text" name="message" placeholder="e.g. Payment Gateway Response Received" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
+                        </div>
+                        <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm transition">
+                            ➕ Inject Test Log
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Mock Exception Generator Form -->
+                <form method="POST" action="{{ route('admin.logs.generate') }}" class="bg-red-50 p-4 rounded-xl border border-red-200">
+                    @csrf
+                    <input type="hidden" name="type" value="exception">
+                    <h3 class="font-bold text-red-800 text-sm mb-3">💥 Mock Exception & Stack Trace Simulator</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-red-700 mb-1">Preset Exception Type</label>
+                            <select name="exception_type" class="w-full px-3 py-2 border border-red-300 rounded-lg text-sm bg-white">
+                                <option value="database">Database Query Exception (SQLSTATE[HY000])</option>
+                                <option value="404">NotFoundHttpException (404 Route Not Found)</option>
+                                <option value="validation">ValidationException (Form Input Failed)</option>
+                                <option value="runtime">Runtime System Failure Exception</option>
+                            </select>
+                        </div>
+                        <p class="text-xs text-red-600">Simulates real production stack traces to trigger audio alarms & auto-scroll.</p>
+                        <button type="submit" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold text-sm transition">
+                            🚨 Trigger Mock Exception
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+        {{-- =========================================================
              LIVE MONITORING
         ========================================================== --}}
 
@@ -699,6 +820,15 @@
 
                         Auto Scroll
 
+                    </label>
+
+                    <label class="flex items-center gap-2 text-sm font-semibold text-red-600 cursor-pointer bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">
+                        <input
+                            type="checkbox"
+                            id="audioAlarmToggle"
+                            checked
+                            class="w-4 h-4 text-red-600 rounded focus:ring-red-500">
+                        🔊 Audio Alarm
                     </label>
 
                 </div>
@@ -1442,6 +1572,39 @@
 
         /*
         |--------------------------------------------------------------------------
+        | Audio Alarm Synthesizer
+        |--------------------------------------------------------------------------
+        */
+
+        function playAudioAlarmBeep() {
+            const audioAlarmToggle = document.getElementById('audioAlarmToggle');
+            if (!audioAlarmToggle || !audioAlarmToggle.checked) return;
+
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const audioCtx = new AudioCtx();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } catch (e) {
+                console.warn('Audio alarm playback error:', e);
+            }
+        }
+
+        let previousLogCount = null;
+
+        /*
+        |--------------------------------------------------------------------------
         | Fetch Live Logs
         |--------------------------------------------------------------------------
         */
@@ -1513,6 +1676,20 @@
 
 
                 if (data.success) {
+
+                    if (previousLogCount !== null && data.logs.length > previousLogCount) {
+                        const newLogs = data.logs.slice(0, data.logs.length - previousLogCount);
+                        const hasCriticalNewLog = newLogs.some(log => {
+                            const level = getLogLevel(log);
+                            return ['ERROR', 'CRITICAL', 'ALERT', 'EMERGENCY'].includes(level);
+                        });
+
+                        if (hasCriticalNewLog) {
+                            playAudioAlarmBeep();
+                        }
+                    }
+
+                    previousLogCount = data.logs.length;
 
                     updateLogs(
                         data.logs

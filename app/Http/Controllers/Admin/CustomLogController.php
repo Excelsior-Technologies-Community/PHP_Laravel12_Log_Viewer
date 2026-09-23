@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CustomLogController
@@ -137,6 +138,45 @@ class CustomLogController
 
         /*
         |--------------------------------------------------------------------------
+        | Telemetry Analytics & Heatmap Computation
+        |--------------------------------------------------------------------------
+        */
+
+        $hourlyHeatmap = [];
+        for ($h = 0; $h < 24; $h++) {
+            $hourStr = sprintf('%02d', $h);
+            $hourlyHeatmap[$hourStr] = 0;
+        }
+
+        foreach ($logs as $logStr) {
+            if (preg_match('/\[\d{4}-\d{2}-\d{2}\s+(\d{2}):/', $logStr, $matches)) {
+                $hKey = $matches[1];
+                if (isset($hourlyHeatmap[$hKey])) {
+                    $hourlyHeatmap[$hKey]++;
+                }
+            }
+        }
+
+        $totalCount = $logs->count();
+        $errorCount = $statistics['error'] + $statistics['critical'] + $statistics['alert'] + $statistics['emergency'];
+        $errorRatio = $totalCount > 0 ? round(($errorCount / $totalCount) * 100, 1) : 0;
+
+        $healthStatus = 'HEALTHY';
+        if ($errorRatio > 20) {
+            $healthStatus = 'CRITICAL';
+        } elseif ($errorRatio > 5) {
+            $healthStatus = 'ATTENTION NEEDED';
+        }
+
+        $telemetry = [
+            'hourlyHeatmap' => $hourlyHeatmap,
+            'errorRatio' => $errorRatio,
+            'healthStatus' => $healthStatus,
+            'totalErrors' => $errorCount,
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
         | Pagination
         |--------------------------------------------------------------------------
         */
@@ -169,6 +209,7 @@ class CustomLogController
             compact(
                 'paginatedLogs',
                 'statistics',
+                'telemetry',
                 'search',
                 'level',
                 'date',
@@ -514,5 +555,44 @@ class CustomLogController
                 );
             })
             ->count();
+    }
+
+    /**
+     * Generate test log entry or mock exception studio.
+     */
+    public function generate(Request $request)
+    {
+        $type = strtolower($request->input('type', 'info'));
+        $message = trim($request->input('message', ''));
+        $exceptionType = $request->input('exception_type', 'database');
+
+        if ($type === 'exception') {
+            if ($exceptionType === 'database') {
+                Log::error("Illuminate\\Database\\QueryException: SQLSTATE[HY000] [2002] Connection refused (SQL: select * from users where id = 1 limit 1)");
+            } elseif ($exceptionType === '404') {
+                Log::warning("Symfony\\Component\\HttpKernel\\Exception\\NotFoundHttpException: Route [admin/payments/unknown] not found in controller.");
+            } elseif ($exceptionType === 'validation') {
+                Log::error("Illuminate\\Validation\\ValidationException: The given data was invalid: email field is required and must be valid email format.");
+            } else {
+                Log::critical("RuntimeError: Unhandled System Exception occurred during processing payload.");
+            }
+        } else {
+            $logMessage = $message ?: "Interactive studio test log entry generated for level [" . strtoupper($type) . "].";
+
+            match ($type) {
+                'debug' => Log::debug($logMessage),
+                'notice' => Log::notice($logMessage),
+                'warning' => Log::warning($logMessage),
+                'error' => Log::error($logMessage),
+                'critical' => Log::critical($logMessage),
+                'alert' => Log::alert($logMessage),
+                'emergency' => Log::emergency($logMessage),
+                default => Log::info($logMessage),
+            };
+        }
+
+        return redirect()
+            ->route('admin.logs')
+            ->with('success', "Test {$type} log entry generated successfully!");
     }
 }
