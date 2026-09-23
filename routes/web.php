@@ -61,3 +61,14 @@ Route::post(
     '/admin/logs/clear',
     [CustomLogController::class, 'clear']
 )->name('admin.logs.clear');
+
+/*
+|--------------------------------------------------------------------------
+| Interactive Test Log Generator
+|--------------------------------------------------------------------------
+*/
+
+Route::post(
+    '/admin/logs/generate',
+    [CustomLogController::class, 'generate']
+)->name('admin.logs.generate');
